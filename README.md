@@ -2,7 +2,7 @@
 
 SPA em **React + Vite** para o sistema de gestão financeira pessoal
 FinanceApp. Consome a API REST do projeto irmão
-[`pedroszdev/Sistema-financero-js`](https://github.com/pedroszdev/Sistema-financero-js).
+[`pedroszdev/financeApp-api`](https://github.com/pedroszdev/financeApp-api).
 
 A interface mostra o saldo, receitas e despesas do mês, gráficos de
 evolução e distribuição por categoria, e permite cadastrar/editar/excluir
@@ -52,8 +52,8 @@ local).
 O frontend **não funciona sem a API no ar.** Em outro diretório:
 
 ```bash
-git clone https://github.com/pedroszdev/Sistema-financero-js.git
-cd Sistema-financero-js
+git clone https://github.com/pedroszdev/financeApp-api.git
+cd financeApp-api
 npm install
 
 # Crie .env com:
