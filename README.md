@@ -1,10 +1,5 @@
 # FinanceApp — Frontend 💸
 
-SPA em **React + Vite** para o sistema de gestão financeira pessoal
-FinanceApp. Consome a API REST do projeto irmão
-[`../Api-sistema-financero-js/`](../Api-sistema-financero-js), hospedada em
-**https://sistema-financero-js.onrender.com**.
-
 A interface mostra o saldo, receitas e despesas do mês, gráficos de
 evolução e distribuição por categoria, e permite cadastrar/editar/excluir
 transações com filtros e paginação.
