@@ -1,8 +1,16 @@
 # FinanceApp — Frontend 💸
 
+SPA em **React + Vite** para o sistema de gestão financeira pessoal
+FinanceApp. Consome a API REST do projeto irmão
+[`pedroszdev/Sistema-financero-js`](https://github.com/pedroszdev/Sistema-financero-js).
+
 A interface mostra o saldo, receitas e despesas do mês, gráficos de
 evolução e distribuição por categoria, e permite cadastrar/editar/excluir
 transações com filtros e paginação.
+
+> ⚠️ **Não existe instância pública da API.** Para rodar este frontend é
+> obrigatório clonar o repo da API e subi-la localmente (ou em um host
+> próprio). Instruções em [Passo 1](#1-suba-a-api-localmente) abaixo.
 
 ## 🚀 Funcionalidades
 
@@ -34,13 +42,38 @@ transações com filtros e paginação.
 - **Context API** para autenticação; `useState`/`useReducer` local para
   forms, filtros e modais (sem Redux/Zustand — escopo não pede)
 
-## 📦 Como rodar localmente
+## 📦 Como rodar
 
-Pré-requisitos: Node.js 18+ e npm.
+Pré-requisitos: Node.js 18+, npm e acesso a um PostgreSQL (Neon free ou
+local).
 
-### Opção A — apontando para a API em produção
+### 1. Suba a API localmente
 
-É o padrão. Nada a configurar:
+O frontend **não funciona sem a API no ar.** Em outro diretório:
+
+```bash
+git clone https://github.com/pedroszdev/Sistema-financero-js.git
+cd Sistema-financero-js
+npm install
+
+# Crie .env com:
+#   DATABASE_URL=postgresql://USER:PASS@HOST/DB?sslmode=require
+#   JWT_ACCESS_SECRET=string-aleatoria-longa
+#   JWT_REFRESH_SECRET=outra-string-aleatoria
+# Se for a primeira execução, descomente `sincronizarTabelas()` em index.js
+# para criar as tabelas, rode uma vez, depois comente de volta.
+
+npm run dev      # fica ouvindo em http://localhost:3000
+```
+
+Confira com `curl http://localhost:3000/` — deve retornar
+`{"message":"Token não fornecido"}` (401). Isso significa que está no ar.
+
+Detalhes completos estão no README do repo da API.
+
+### 2. Suba o frontend
+
+De volta a este diretório:
 
 ```bash
 cd financeapp-frontend
@@ -48,45 +81,40 @@ npm install
 npm run dev
 ```
 
-Abra **http://localhost:5173**. O Vite dev server faz proxy de `/api/*` para
-`https://sistema-financero-js.onrender.com`. O primeiro request pode
-demorar ~20s por causa do cold start do Render.
+Abra **http://localhost:5173**. O default já aponta para
+`http://localhost:3000` via proxy do Vite, então se a API estiver de pé,
+funciona sem tocar em nada.
 
-### Opção B — apontando para a API local
+### Opcional — host da API diferente
 
-Útil quando o backend está rodando em `http://localhost:3000`:
+Se você subiu a API em outra porta/URL (ex.: deploy próprio no Render,
+Fly.io, Railway), crie um `.env` neste diretório:
 
 ```bash
-# No frontend, criar .env com:
-echo 'VITE_API_TARGET=http://localhost:3000' > .env
-echo 'VITE_API_BASE_URL=/api' >> .env
-
+cp .env.example .env
+# edite VITE_API_TARGET para sua URL, ex.: https://minha-api.fly.dev
 npm run dev
 ```
 
-Para rodar os dois projetos juntos, siga o README do backend para subir a
-API e depois suba o frontend com o `.env` acima. Os requests do navegador
-vão para `/api/*`, o Vite proxy reescreve para `http://localhost:3000` e a
-API responde normalmente.
-
 ## 🔧 Variáveis de ambiente
 
-Veja `.env.example`. Duas variáveis, ambas opcionais em dev:
+Veja `.env.example`. Ambas opcionais — os defaults funcionam para API
+local.
 
 | Variável | Padrão | O que faz |
 |---|---|---|
-| `VITE_API_TARGET` | `https://sistema-financero-js.onrender.com` | Alvo do proxy do Vite dev server. Lido em `vite.config.js` via `loadEnv()`. |
+| `VITE_API_TARGET` | `http://localhost:3000` | Alvo do proxy do Vite dev server. Lido em `vite.config.js` via `loadEnv()`. |
 | `VITE_API_BASE_URL` | `/api` | Prefixo dos requests no código cliente. Em dev mantenha `/api` para casar com o proxy; em produção aponte para a URL absoluta da API (exige CORS configurado no backend). |
 
 ## 🌐 Por que um proxy?
 
-A API **não tem CORS configurado**. Um SPA em `localhost:5173` chamando
-`sistema-financero-js.onrender.com` seria bloqueado pelo navegador no
-preflight.
+A API **não tem CORS configurado**. Mesmo rodando tudo em localhost, um
+SPA em `localhost:5173` chamando `localhost:3000` seria bloqueado pelo
+navegador no preflight (são origens diferentes).
 
-O `vite.config.js` contorna isso em dev proxyando `/api/*` para o domínio
-real com `changeOrigin: true`. Como o browser enxerga tudo como mesma
-origem (`localhost:5173`), não há preflight.
+O `vite.config.js` contorna isso em dev proxyando `/api/*` para o alvo
+com `changeOrigin: true`. Como o browser enxerga tudo como mesma origem
+(`localhost:5173`), não há preflight e tudo flui.
 
 Em **produção**, duas saídas:
 1. Adicionar `cors` na API (uma linha em `index.js`) e redeployar.
@@ -204,9 +232,9 @@ src/
 
 ## 🔗 Mapeamento frontend → API
 
-A API real usa paths em português e campos em português. O frontend
-traduz tudo na camada de apresentação — rótulos e mensagens continuam em
-pt-BR, mas o payload enviado/recebido casa exatamente com o backend:
+A API real usa paths e campos em português. O frontend traduz tudo na
+camada de apresentação — rótulos e mensagens continuam em pt-BR, mas o
+payload enviado/recebido casa exatamente com o backend:
 
 | Uso no frontend | Endpoint | Body enviado |
 |---|---|---|
@@ -244,30 +272,32 @@ Pages, GitHub Pages, Render static site, S3 + CloudFront, etc.
 
 Antes de fazer deploy:
 
-1. Rodar `npm run build` — o resultado fica em `dist/`.
-2. Configurar a variável `VITE_API_BASE_URL` no provedor apontando para a
+1. Ter a API deployada em algum lugar com URL pública estável
+   (Render, Fly.io, Railway, VPS, etc.).
+2. Rodar `npm run build` — o resultado fica em `dist/`.
+3. Configurar a variável `VITE_API_BASE_URL` no provedor apontando para a
    URL absoluta da API (`https://sua-api.com`), **não** mais `/api`.
-3. **Pré-requisito**: a API precisa aceitar o domínio do frontend via CORS.
+4. **Pré-requisito**: a API precisa aceitar o domínio do frontend via CORS.
    Sem isso, o browser vai bloquear os requests. Alternativa é servir o
    build pela própria API atrás do mesmo domínio.
-4. Configurar o fallback SPA do host para `index.html` (todo host de
+5. Configurar o fallback SPA do host para `index.html` (todo host de
    estático tem essa opção — ela garante que `/dashboard` não retorne 404
    quando o usuário recarregar a página).
 
 ## ⚠️ Quirks conhecidos (herdados da API)
 
-- **Cold start de ~20s** no primeiro request após período ocioso (Render
-  free tier). O skeleton do dashboard segura a UI enquanto isso.
 - **`PUT /transacao/edit/:id` retorna apenas a contagem `[1]`**, não a
   transação atualizada — por isso o frontend refaz a listagem depois de
   salvar em vez de fazer optimistic update com o objeto de retorno.
 - **Nenhum endpoint para listar categorias** — se a API passar a ter um
   `GET /categorias` no futuro, trocar o array hardcoded em
   `utils/constants.js` por um fetch no bootstrap.
+- **Sem instância pública da API** — este frontend depende de você subir
+  a API (veja Passo 1).
 
 ## 🧪 Verificação manual (checklist)
 
-Depois de subir o dev server, validar o fluxo completo:
+Com API local + frontend no ar, validar o fluxo completo:
 
 1. ✅ Registro cria a conta e já faz login automático (`Senha@12` passa na regex).
 2. ✅ Login salva `accesstoken` e `refreshtoken` em `localStorage`.
